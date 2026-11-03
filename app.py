@@ -36,7 +36,7 @@ elif menu == "Add / Update Item":
     with st.form("inventory_form"):
         name = st.text_input("Item Name").strip().capitalize()
         quantity = st.number_input("Quantity", min_value=0, step=1)
-        price = st.number_input("Price ($)", min_value=0.0, format="%.2f")
+        price = st.number_input("Price (₱)", min_value=0.0, format="%.2f")
         submit = st.form_submit_button("Save Item")
 
         if submit:
