@@ -36,9 +36,7 @@ conn.commit()
 
  
 
- 
-
-st.title(" Inventory System") 
+st.title("📦 Smart Inventory System") 
 
  
 
@@ -66,15 +64,21 @@ if menu == "View Inventory":
 
   else: 
 
- 
-
     df["Total Price"] = df["quantity"] * df["price"] 
 
  
 
-    total_stock_count = df["quantity"].sum() 
+    df["price"] = df["price"].map("${:,.2f}".format) 
 
-    total_inventory_value = df["Total Price"].sum() 
+    df["Total Price"] = df["Total Price"].map("${:,.2f}".format) 
+
+ 
+
+    raw_df = pd.read_sql("SELECT quantity, price FROM items", conn) 
+
+    total_stock_count = raw_df["quantity"].sum() 
+
+    total_inventory_value = (raw_df["quantity"] * raw_df["price"]).sum() 
 
  
 
@@ -88,15 +92,13 @@ if menu == "View Inventory":
 
     st.markdown("---") 
 
- 
-
     st.dataframe(df, use_container_width=True) 
 
  
 
 elif menu == "Add / Update Item": 
 
-  st.subheader("Add or Update Stock") 
+  st.subheader("Add Stock (Calculates Average Price)") 
 
  
 
@@ -104,11 +106,19 @@ elif menu == "Add / Update Item":
 
     name = st.text_input("Item Name").strip().capitalize() 
 
-    quantity = st.number_input("Quantity", min_value=0, step=1) 
+    quantity_to_add = st.number_input( 
 
-    price = st.number_input("Price ($)", min_value=0.0, format="%.2f") 
+        "Quantity to Add", min_value=1, step=1, value=1 
 
-    submit = st.form_submit_button("Save Item") 
+    ) 
+
+    unit_price = st.number_input( 
+
+        "Unit Price ($)", min_value=0.0, format="%.2f", value=0.0 
+
+    ) 
+
+    submit = st.form_submit_button("Add to Stock") 
 
  
 
@@ -118,29 +128,61 @@ elif menu == "Add / Update Item":
 
         cursor.execute( 
 
-            """ 
-
-                    INSERT INTO items (name, quantity, price)  
-
-                    VALUES (?, ?, ?) 
-
-                    ON CONFLICT(name)  
-
-                    DO UPDATE SET  
-
-                        quantity = items.quantity + excluded.quantity, 
-
-                        price = excluded.price 
-
-                """, 
-
-            (name, quantity, price), 
+            "SELECT quantity, price FROM items WHERE name = ?", (name,) 
 
         ) 
 
+        existing = cursor.fetchone() 
+
+ 
+
+        if existing: 
+
+          old_qty, old_price = existing 
+
+          new_qty = old_qty + quantity_to_add 
+
+          blended_price = ((old_qty * old_price) + (quantity_to_add * unit_price)) / new_qty 
+
+ 
+
+          cursor.execute( 
+
+              """ 
+
+                        UPDATE items  
+
+                        SET quantity = ?, price = ? 
+
+                        WHERE name = ? 
+
+                    """, 
+
+              (new_qty, blended_price, name), 
+
+          ) 
+
+        else: 
+
+          cursor.execute( 
+
+              """ 
+
+                        INSERT INTO items (name, quantity, price)  
+
+                        VALUES (?, ?, ?) 
+
+                    """, 
+
+              (name, quantity_to_add, unit_price), 
+
+          ) 
+
+ 
+
         conn.commit() 
 
-        st.success(f"Successfully added to stock: **{name}**!") 
+        st.success(f"Successfully updated stock for **{name}**!") 
 
       else: 
 
