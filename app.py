@@ -17,7 +17,7 @@ cursor.execute(
 )
 conn.commit()
 
-st.title("📦 Simple Inventory System")
+st.title("Inventory System")
 
 menu = st.sidebar.selectbox(
     "Navigation", ["Stock View", "Add & Restock", "Remove Item"]
