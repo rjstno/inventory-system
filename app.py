@@ -33,8 +33,8 @@ if menu == "Stock View":
   else:
     df["Total Price"] = df["quantity"] * df["price"]
 
-    df["price"] = df["price"].map("${:,.2f}".format)
-    df["Total Price"] = df["Total Price"].map("${:,.2f}".format)
+    df["price"] = df["price"].map("₱{:,.2f}".format)
+    df["Total Price"] = df["Total Price"].map("₱{:,.2f}".format)
 
     raw_df = pd.read_sql("SELECT quantity, price FROM items", conn)
     total_stock_count = raw_df["quantity"].sum()
@@ -42,7 +42,7 @@ if menu == "Stock View":
 
     col1, col2 = st.columns(2)
     col1.metric("Total Items", f"{total_stock_count:,}")
-    col2.metric("Total Value", f"${total_inventory_value:,.2f}")
+    col2.metric("Total Value", f"₱{total_inventory_value:,.2f}")
 
     st.markdown("---")
     st.dataframe(df, use_container_width=True)
@@ -56,7 +56,7 @@ elif menu == "Add & Restock":
         "Quantity", min_value=1, step=1, value=1
     )
     unit_price = st.number_input(
-        "Unit Price ($)", min_value=0.0, format="%.2f", value=0.0
+        "Unit Price ()", min_value=0.0, format="%.2f", value=0.0
     )
     submit = st.form_submit_button("Save Item")
 
