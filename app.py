@@ -17,7 +17,7 @@ cursor.execute(
 )
 conn.commit()
 
-st.title("Inventory System")
+st.title("📦 Simple Inventory System")
 
 menu = st.sidebar.selectbox(
     "Navigation", ["Stock View", "Add & Restock", "Remove Item"]
@@ -56,7 +56,7 @@ elif menu == "Add & Restock":
         "Quantity", min_value=1, step=1, value=1
     )
     unit_price = st.number_input(
-        "Unit Price ()", min_value=0.0, format="%.2f", value=0.0
+        "Unit Price (₱)", min_value=0.0, format="%.2f", value=0.0
     )
     submit = st.form_submit_button("Save Item")
 
