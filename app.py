@@ -4,7 +4,7 @@ import streamlit as st
 
 
 def get_connection():
-  return psycopg2.connect(st.secrets["DATABASE_URL"])
+  return psycopg2.connect(st.secrets[DATABASE_URL = "postgresql://postgres.twfzlmkvxikthikwqbmv:database12310293@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"])
 
 conn = get_connection()
 cursor = conn.cursor()
