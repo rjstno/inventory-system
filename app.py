@@ -7,7 +7,7 @@ def get_connection():
   return psycopg2.connect(st.secrets["DATABASE_URL"])
 
 
-# Initialize cloud database table
+
 conn = get_connection()
 cursor = conn.cursor()
 cursor.execute(
