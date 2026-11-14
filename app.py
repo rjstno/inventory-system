@@ -4,8 +4,10 @@ import streamlit as st
 
 
 def get_connection():
-  return psycopg2.connect(st.secrets["postgresql://postgres:database12310293@db.twfzlmkvxikthikwqbmv.supabase.co:5432/postgres"])
-  
+  return psycopg2.connect(st.secrets["DATABASE_URL"])
+
+
+# Initialize cloud database table
 conn = get_connection()
 cursor = conn.cursor()
 cursor.execute(
