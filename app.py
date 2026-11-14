@@ -1,14 +1,17 @@
-import sqlite3
 import pandas as pd
+import psycopg2
 import streamlit as st
 
-conn = sqlite3.connect("inventory.db", check_same_thread=False)
-cursor = conn.cursor()
 
+def get_connection():
+  return psycopg2.connect(st.secrets["DATABASE_URL"])
+
+conn = get_connection()
+cursor = conn.cursor()
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT UNIQUE,
         quantity INTEGER,
         price REAL
@@ -16,6 +19,8 @@ cursor.execute(
 """
 )
 conn.commit()
+cursor.close()
+conn.close()
 
 st.title("Inventory System")
 
@@ -26,7 +31,9 @@ menu = st.sidebar.selectbox(
 if menu == "Stock View":
   st.subheader("Stock View")
 
+  conn = get_connection()
   df = pd.read_sql("SELECT * FROM items", conn)
+  conn.close()
 
   if df.empty:
     st.info("No items in inventory yet.")
@@ -36,7 +43,10 @@ if menu == "Stock View":
     df["price"] = df["price"].map("₱{:,.2f}".format)
     df["Total Price"] = df["Total Price"].map("₱{:,.2f}".format)
 
+    conn = get_connection()
     raw_df = pd.read_sql("SELECT quantity, price FROM items", conn)
+    conn.close()
+
     total_stock_count = raw_df["quantity"].sum()
     total_inventory_value = (raw_df["quantity"] * raw_df["price"]).sum()
 
@@ -62,8 +72,10 @@ elif menu == "Add & Restock":
 
     if submit:
       if name:
+        conn = get_connection()
+        cursor = conn.cursor()
         cursor.execute(
-            "SELECT quantity, price FROM items WHERE name = ?", (name,)
+            "SELECT quantity, price FROM items WHERE name = %s", (name,)
         )
         existing = cursor.fetchone()
 
@@ -75,8 +87,8 @@ elif menu == "Add & Restock":
           cursor.execute(
               """
                         UPDATE items 
-                        SET quantity = ?, price = ?
-                        WHERE name = ?
+                        SET quantity = %s, price = %s
+                        WHERE name = %s
                     """,
               (new_qty, blended_price, name),
           )
@@ -84,26 +96,34 @@ elif menu == "Add & Restock":
           cursor.execute(
               """
                         INSERT INTO items (name, quantity, price) 
-                        VALUES (?, ?, ?)
+                        VALUES (%s, %s, %s)
                     """,
               (name, quantity_to_add, unit_price),
           )
 
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success(f"Successfully saved **{name}**!")
       else:
         st.error("Please enter an item name.")
 
 elif menu == "Remove Item":
   st.subheader("Remove Item")
+  conn = get_connection()
   df = pd.read_sql("SELECT name FROM items", conn)
+  conn.close()
 
   if df.empty:
     st.info("No items available to remove.")
   else:
     item_to_delete = st.selectbox("Select Item", df["name"])
     if st.button("Delete"):
-      cursor.execute("DELETE FROM items WHERE name = ?", (item_to_delete,))
+      conn = get_connection()
+      cursor = conn.cursor()
+      cursor.execute("DELETE FROM items WHERE name = %s", (item_to_delete,))
       conn.commit()
+      cursor.close()
+      conn.close()
       st.success(f"Removed **{item_to_delete}** from inventory.")
       st.rerun()
